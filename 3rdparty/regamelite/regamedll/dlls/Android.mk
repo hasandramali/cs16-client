@@ -32,7 +32,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/. \
 LOCAL_SRC_FILES := \
 airtank.cpp ammo.cpp animating.cpp animation.cpp bmodels.cpp buttons.cpp career_tasks.cpp cbase.cpp client.cpp combat.cpp debug.cpp doors.cpp \
 effects.cpp explode.cpp func_break.cpp func_tank.cpp game.cpp gamerules.cpp ggrenade.cpp globals.cpp h_battery.cpp h_cycler.cpp healthkit.cpp \
-h_export.cpp hintmessage.cpp items.cpp lights.cpp mapinfo.cpp maprules.cpp mortar.cpp mpstubb.cpp multiplay_gamerules.cpp observer.cpp pathcorner.cpp \
+h_export.cpp hintmessage.cpp items.cpp lights.cpp mapinfo.cpp maprules.cpp mortar.cpp multiplay_gamerules.cpp observer.cpp pathcorner.cpp \
 plane.cpp plats.cpp player.cpp singleplay_gamerules.cpp skill.cpp sound.cpp soundent.cpp spectator.cpp subs.cpp training_gamerules.cpp triggers.cpp \
 tutor_base_states.cpp tutor_base_tutor.cpp tutor.cpp tutor_cs_states.cpp tutor_cs_tutor.cpp util.cpp vehicle.cpp weapons.cpp weapontype.cpp world.cpp \
 bot/cs_bot_chatter.cpp bot/cs_bot.cpp bot/cs_bot_event.cpp bot/cs_bot_init.cpp bot/cs_bot_learn.cpp bot/cs_bot_listen.cpp bot/cs_bot_manager.cpp \

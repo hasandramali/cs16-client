@@ -367,12 +367,12 @@ void CAM_ToThirdPerson(void)
 { 
 	vec3_t viewangles;
 
-#if !defined( _DEBUG )
+/*#if !defined( _DEBUG )
 	if ( sv_cheats && !sv_cheats->value )
 	{
 		return;
 	}
-#endif
+#endif*/
 
 	gEngfuncs.GetViewAngles( (float *)viewangles );
 

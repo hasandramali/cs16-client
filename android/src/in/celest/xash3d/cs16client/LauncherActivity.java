@@ -109,7 +109,7 @@ public class LauncherActivity extends Activity {
 		// TODO: extend firsttime with requesting player nickname!
 		mFirstTime = mPref.getBoolean( "firsttime", true );
 		
-		mCmdArgs.   setText   (mPref.getString ("argv"   , "-console"));
+		mCmdArgs.   setText   (mPref.getString ("argv"   , "-dev 1"));
 		mEnableZBot.setChecked(mPref.getBoolean("zbots"  , true ));
 		mEnableYaPB.setChecked(mPref.getBoolean("yapbs"  , false));
 		mEnableCZero.setChecked(mPref.getBoolean("czero" , false)); // TODO

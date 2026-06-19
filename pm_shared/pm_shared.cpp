@@ -3212,6 +3212,13 @@ void PM_Move(playermove_t *ppmove, int server)
 	{
 		pmove->friction = 1.0f;
 	}
+#ifdef CLIENT_DLL
+ 	void update_player_info( int onground, int inwater, int walking );
+ 	update_player_info(
+ 	    pmove->onground != -1,
+ 	    pmove->waterlevel > 1,
+ 	    pmove->movetype == MOVETYPE_WALK );
+#endif
 }
 
 int PM_GetVisEntInfo(int ent)

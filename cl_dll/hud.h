@@ -243,7 +243,7 @@ private:
 	RGBA m_staticRgba;
 
 	cvar_t *xhair_enable;
-
+	cvar_t *hud_weapon;
 	cvar_t *xhair_gap;
 	cvar_t *xhair_size;
 	cvar_t *xhair_thick;

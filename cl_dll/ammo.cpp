@@ -26,7 +26,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include "strl.h"
 
 #include "ammohistory.h"
 #include "eventscripts.h"
@@ -286,7 +285,7 @@ int CHudAmmo::Init(void)
 	m_pClDynamicCrosshair = CVAR_CREATE("cl_dynamiccrosshair", "1", FCVAR_ARCHIVE);
 
 	m_hStaticSpr = 0;
-
+	hud_weapon = CVAR_CREATE( "hud_weapon", 0, FCVAR_ARCHIVE );
 	m_iFlags = HUD_DRAW | HUD_THINK; //!!!
 	m_R = 50;
 	m_G = 250;
@@ -632,13 +631,13 @@ int CHudAmmo::MsgFunc_CurWeapon(const char *pszName, int iSize, void *pbuf )
 int CHudAmmo::MsgFunc_WeaponList(const char *pszName, int iSize, void *pbuf )
 {
 	BufferReader reader( pszName, pbuf, iSize );
-
-	WEAPON Weapon = { 0 };
+	
+	WEAPON Weapon;
 
 	strncpy( Weapon.szName, reader.ReadString(), MAX_WEAPON_NAME );
 	Weapon.szName[MAX_WEAPON_NAME-1] = 0;
 	Weapon.iAmmoType = (int)reader.ReadChar();
-
+	
 	Weapon.iMax1 = reader.ReadByte();
 	if (Weapon.iMax1 == 255)
 		Weapon.iMax1 = -1;
@@ -653,21 +652,6 @@ int CHudAmmo::MsgFunc_WeaponList(const char *pszName, int iSize, void *pbuf )
 	Weapon.iId = reader.ReadChar();
 	Weapon.iFlags = reader.ReadByte();
 	Weapon.iClip = 0;
-
-	if( Weapon.iId < 0 || Weapon.iId >= MAX_WEAPONS )
-		return 0;
-	if( Weapon.iSlot < 0 || Weapon.iSlot >= MAX_WEAPON_SLOTS + 1 )
-		return 0;
-	if( Weapon.iSlotPos < 0 || Weapon.iSlotPos >= MAX_WEAPON_POSITIONS + 1 )
-		return 0;
-	if( Weapon.iAmmoType < -1 || Weapon.iAmmoType >= MAX_AMMO_TYPES )
-		return 0;
-	if( Weapon.iAmmo2Type < -1 || Weapon.iAmmo2Type >= MAX_AMMO_TYPES )
-		return 0;
-	if( Weapon.iAmmoType >= 0 && Weapon.iMax1 == 0 )
-		return 0;
-	if( Weapon.iAmmo2Type >= 0 && Weapon.iMax2 == 0 )
-		return 0;
 
 	gWR.AddWeapon( &Weapon );
 
@@ -963,6 +947,7 @@ void CHudAmmo::UserCmd_Autobuy()
 	char *pfile = afile;
 	char token[1024];
 	char szCmd[1024];
+	int remaining = 1023;
 
 	if( !pfile )
 	{
@@ -970,12 +955,16 @@ void CHudAmmo::UserCmd_Autobuy()
 		return;
 	}
 
-	strlcpy( szCmd, "cl_setautobuy", sizeof( szCmd ) );
+	strcpy(szCmd, "cl_setautobuy");
+	remaining -= sizeof( "cl_setautobuy" );
 
 	while((pfile = gEngfuncs.COM_ParseFile( pfile, token )))
 	{
-		strlcat( szCmd, " ", sizeof( szCmd ) );
-		strlcat( szCmd, token, sizeof( szCmd ) );
+		// append space first
+		strncat(szCmd, " ", remaining);
+		strncat(szCmd, token, remaining - 1);
+
+		remaining -= strlen( token ) - 1;
 	}
 
 	gEngfuncs.pfnServerCmd( szCmd );
@@ -988,7 +977,8 @@ void CHudAmmo::UserCmd_Rebuy()
 	char *pfile = afile;
 	char token[1024];
 	char szCmd[1024];
-	size_t lastCh;
+	int lastCh;
+	int remaining = 1023;
 
 	if( !pfile )
 	{
@@ -996,19 +986,22 @@ void CHudAmmo::UserCmd_Rebuy()
 		return;
 	}
 
-	strlcpy( szCmd, "cl_setrebuy \"", sizeof( szCmd ) );
+	// start with \"
+	strcpy(szCmd, "cl_setrebuy \"" );
+	remaining -= sizeof( "cl_setrebuy \"" );
 
 	while((pfile = gEngfuncs.COM_ParseFile( pfile, token )))
 	{
-		strlcat( szCmd, token, sizeof( szCmd ) );
-		strlcat( szCmd, " ", sizeof( szCmd ) );
+		strncat(szCmd, token, remaining );
+		remaining -= strlen( token );
+
+		// append space after token
+		strncat(szCmd, " ", remaining );
+		remaining--;
 	}
 	// replace last space with ", before terminator
-	lastCh = strlen( szCmd );
-	if( lastCh > 0 && lastCh < sizeof( szCmd ) - 1 )
-	{
-		szCmd[lastCh - 1] = '\"';
-	}
+	lastCh = strlen(szCmd);
+	szCmd[lastCh] = '\"';
 
 	gEngfuncs.pfnServerCmd( szCmd );
 	gEngfuncs.COM_FreeFile( afile );
@@ -1078,6 +1071,24 @@ int CHudAmmo::Draw(float flTime)
 
 	// Does this weapon have a clip?
 	y = ScreenHeight - gHUD.m_iFontHeight - gHUD.m_iFontHeight/2;
+
+	if ( hud_weapon->value != 0.0f )
+	{
+		int r, g, b;
+		if ( gWR.HasAmmo( m_pWeapon ) )
+		{
+			DrawUtils::UnpackRGB( r, g, b, gHUD.m_iDefaultHUDColor );
+			DrawUtils::ScaleColors( r, g, b, 192 );
+		}
+		else
+		{
+			DrawUtils::UnpackRGB( r, g, b, RGB_REDISH );
+			DrawUtils::ScaleColors( r, g, b, 128 );
+		}
+		SPR_Set( m_pWeapon->hInactive, r, g, b );
+		int offset = ( m_pWeapon->rcInactive.bottom - m_pWeapon->rcInactive.top ) / 8;
+		SPR_DrawAdditive( 0, ScreenWidth / 1.73, y - offset, &m_pWeapon->rcInactive );
+	}
 
 	// Does weapon have any ammo at all?
 	if (m_pWeapon->iAmmoType > 0)
@@ -1584,11 +1595,6 @@ void CHudAmmo::DrawCrosshair()
 
 	weaponid = m_pWeapon->iId;
 
-	if ( weaponid == WEAPON_AWP
-	     || weaponid == WEAPON_SCOUT
-	     || weaponid == WEAPON_SG550
-	     || weaponid == WEAPON_G3SG1 )
-		return;
 
 	if ( g_iWeaponFlags & WPNSTATE_SHIELD_DRAWN )
 		return;
@@ -2102,4 +2108,3 @@ void CHudAmmo::HideCrosshair()
 {
 	m_hStaticSpr = 0;
 }
-

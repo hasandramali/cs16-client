@@ -564,7 +564,7 @@ int CHudAmmo::MsgFunc_HideWeapon( const char *pszName, int iSize, void *pbuf )
 	if (gEngfuncs.IsSpectateOnly())
 		return 1;
 
-	if ( gHUD.m_iHideHUDDisplay & ( HIDEHUD_WEAPONS | HIDEHUD_FLASHLIGHT | HIDEHUD_ALL ) )
+	if ( gHUD.m_iHideHUDDisplay & ( HIDEHUD_WEAPONS | HIDEHUD_FLASHLIGHT | HIDEHUD_ALL | HIDEHUD_CROSSHAIR ) )
 	{
 		gpActiveSel = NULL;
 		HideCrosshair();
@@ -580,11 +580,19 @@ int CHudAmmo::MsgFunc_HideWeapon( const char *pszName, int iSize, void *pbuf )
 //
 int CHudAmmo::MsgFunc_CurWeapon(const char *pszName, int iSize, void *pbuf )
 {
+	int fOnTarget = FALSE;
+
 	BufferReader reader( pszName, pbuf, iSize );
 
 	int iState = reader.ReadByte();
 	int iId = reader.ReadChar();
 	int iClip = reader.ReadChar();
+
+	// detect if we're also on target
+	if( iState > 1 )
+	{
+		fOnTarget = TRUE;
+	}
 
 	if ( iId < 1 )
 	{
@@ -619,6 +627,23 @@ int CHudAmmo::MsgFunc_CurWeapon(const char *pszName, int iSize, void *pbuf )
 		return 1;
 
 	m_pWeapon = pWeapon;
+
+	if( gHUD.m_iFOV >= 90 )
+	{ // normal crosshairs
+		if( fOnTarget && m_pWeapon->hAutoaim )
+			SetCrosshair( m_pWeapon->hAutoaim, m_pWeapon->rcAutoaim, 255, 255, 255 );
+		else
+			SetCrosshair( m_pWeapon->hCrosshair, m_pWeapon->rcCrosshair, 255, 255, 255 );
+
+		HideCrosshair(); // hide static
+	}
+	else
+	{ // zoomed crosshairs
+		if( fOnTarget && m_pWeapon->hZoomedAutoaim )
+			SetCrosshair( m_pWeapon->hZoomedAutoaim, m_pWeapon->rcZoomedAutoaim, 255, 255, 255 );
+		else
+			SetCrosshair( m_pWeapon->hZoomedCrosshair, m_pWeapon->rcZoomedCrosshair, 255, 255, 255 );
+	}
 
 	m_fFade = 200.0f; //!!!
 
@@ -1017,16 +1042,14 @@ int CHudAmmo::Draw(float flTime)
 	int a, x, y, r, g, b;
 	int AmmoWidth;
 
-	if (!(gHUD.m_iWeaponBits & (1<<(WEAPON_SUIT)) ))
-		return 1;
-
 	// place it here, so pretty dynamic crosshair will work even in spectator!
 	if( gHUD.m_iFOV > 40 )
 	{
-		HideCrosshair(); // hide static
-
 		// draw a dynamic crosshair
-		DrawCrosshair();
+		if( !( gHUD.m_iHideHUDDisplay & HIDEHUD_CROSSHAIR ) )
+			DrawCrosshair();
+
+		DrawSpriteCrosshair();
 	}
 	else
 	{
@@ -1038,7 +1061,10 @@ int CHudAmmo::Draw(float flTime)
 		}
 	}
 
-	if ( (gHUD.m_iHideHUDDisplay & ( HIDEHUD_WEAPONS | HIDEHUD_ALL )) )
+	if (!(gHUD.m_iWeaponBits & (1<<(WEAPON_SUIT)) ))
+		return 1;
+
+	if( gHUD.m_iHideHUDDisplay & ( HIDEHUD_WEAPONS | HIDEHUD_ALL ) )
 		return 1;
 
 	// Draw Weapon Menu
@@ -1157,6 +1183,9 @@ int CHudAmmo::Draw(float flTime)
 void CHudAmmo::DrawSpriteCrosshair()
 {
 	int x, y;
+
+	if( g_iUser1 && g_iUser1 != OBS_IN_EYE )
+		return;
 
 	if( !m_hStaticSpr )
 		return;
@@ -1587,6 +1616,9 @@ void CHudAmmo::DrawCrosshair( int weaponId )
 
 void CHudAmmo::DrawCrosshair()
 {
+	if( g_iUser1 && g_iUser1 != OBS_IN_EYE )
+		return;
+
 	int flags, iDeltaDistance, iDistance, iLength, weaponid;
 	float flCrosshairDistance;
 

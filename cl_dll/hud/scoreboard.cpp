@@ -569,14 +569,13 @@ int CHudScoreboard :: MsgFunc_ScoreInfo( const char *pszName, int iSize, void *p
 	short frags = reader.ReadShort();
 	short deaths = reader.ReadShort();
 	short playerclass = reader.ReadShort();
-	short teamnumber = reader.ReadShort();
+	reader.ReadShort();
 
 	if ( cl > 0 && cl <= MAX_PLAYERS )
 	{
 		g_PlayerExtraInfo[cl].frags = frags;
 		g_PlayerExtraInfo[cl].deaths = deaths;
 		g_PlayerExtraInfo[cl].playerclass = playerclass;
-		g_PlayerExtraInfo[cl].teamnumber = teamnumber;
 
 		//gViewPort->UpdateOnPlayerInfo();
 	}
